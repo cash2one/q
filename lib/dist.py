@@ -31,7 +31,6 @@ class Registor(object):
         return 1
 
     def query(self):
-        # print "*******", self.services
         return self.services
 
 def setup(rc):

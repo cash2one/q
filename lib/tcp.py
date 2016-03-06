@@ -96,12 +96,35 @@ def poll():
             sock.connecting = False
             log.info("%s connecting done", sock)
 
+        buff = "".join(sock.write_buff)
+        sock.write_buff = []
+        while buff:
+            try:
+                n = sock.sock.send(buff)
+                if n < len(buff):
+                    if n == 0: 
+                        break
+                    else:
+                        buff = buff[n:]
+                else:
+                    buff = ""
+            except socket.error as e:
+                err = e.args[0]
+                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                    sock.write_buff.insert(0, buff)
+                    break
+                # TODO
+                else:
+                    1/0
+                    pass
+        if buff:
+            sock.write_buff.append(buff)
+        else:
+            _writes.remove(sock.sock)
+
         #print "begin send"
-
-
-        # buff = "".join(sock.write_buff)
-        # sock.write_buff = []
-        # while True:
+        # while sock.write_buff:
+        #     buff = sock.write_buff.pop(0)
         #     try:
         #         n = sock.sock.send(buff)
         #         if n < len(buff):
@@ -118,33 +141,13 @@ def poll():
         #         # TODO
         #         else:
         #             pass
-
-
-        while sock.write_buff:
-            buff = sock.write_buff.pop(0)
-            try:
-                n = sock.sock.send(buff)
-                if n < len(buff):
-                    # log.debug("tcp send %s", n)
-                    if n != 0: buff = buff[n:]
-                    sock.write_buff.insert(0, buff)
-                    break
-                # log.debug("tcp send %s", n)
-            except socket.error as e:
-                err = e.args[0]
-                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                    sock.write_buff.insert(0, buff)
-                    break
-                # TODO
-                else:
-                    pass
         #print "end send"
-        if not sock.write_buff:
-            try:
-                _writes.remove(sock.sock)
-            except:
-                print sock.sock.getpeername(), sock.sock.getsockname()
-                import pdb; pdb.set_trace() 
+        #if not sock.write_buff:
+        #    try:
+        #        _writes.remove(sock.sock)
+        #    except:
+        #        print sock.sock.getpeername(), sock.sock.getsockname()
+        #        import pdb; pdb.set_trace() 
 
 class Socket(object):
 
