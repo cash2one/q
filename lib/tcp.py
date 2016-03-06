@@ -94,8 +94,6 @@ def poll():
         sock = _socks[writable.fileno()]
         if sock.connecting:
             sock.connecting = False
-            if not sock.write_buff:
-                _writes.remove(sock.sock)
             log.info("%s connecting done", sock)
 
         #print "begin send"
@@ -142,7 +140,11 @@ def poll():
                     pass
         #print "end send"
         if not sock.write_buff:
-            _writes.remove(sock.sock)
+            try:
+                _writes.remove(sock.sock)
+            except:
+                print sock.sock.getpeername(), sock.sock.getsockname()
+                import pdb; pdb.set_trace() 
 
 class Socket(object):
 
@@ -180,6 +182,7 @@ class Socket(object):
     def close(self):
         # TODO 关闭 半关闭
         if self.write_buff or self.connecting:
+            print "remove 1", self.sock.getpeername(), self.sock.getsockname()
             _writes.remove(self.sock)
         if self.readable or self.accept:
             _reads.remove(self.sock)
@@ -188,6 +191,7 @@ class Socket(object):
     def beenclosed(self):
         # TODO 关闭 半关闭
         if self.write_buff or self.connecting:
+            print "remove 2", self.sock.getpeername(), self.sock.getsockname()
             _writes.remove(self.sock)
         if self.readable or self.accept:
             _reads.remove(self.sock)

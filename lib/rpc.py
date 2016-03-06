@@ -22,15 +22,18 @@ TODO
 
 """
 
-from ujson import loads, dumps
+from json import loads, dumps
 from struct import pack, unpack
 
 import tcp
 import log
+import weakref
 
 LENGTH = 2
 
 class Server(object):
+
+    inst = weakref.WeakValueDictionary()
 
     def __init__(self, host, port):
         self.host = host
@@ -39,11 +42,19 @@ class Server(object):
         self.sock = tcp.listen(host, port, self._on_server_data, self._on_server_close)
         self.services = {}
 
+        self.inst[host, port] = self
+
     def __repr__(self):
         return self.name
 
     def __str__(self):
         return self.name
+
+    def get_service(self, name):
+        if name not in self.services:
+            log.error("%s get_service %s not in", self, name)
+            return 
+        return self.services[name]
 
     def add_service(self, name, service):
         if name in self.services:
@@ -104,7 +115,21 @@ class Server(object):
     def _on_server_close(self, sock):
         pass
 
+    def req(self, service, method, args=(), kw=None, on_resp=None):
+        try:
+            service = self.services[servicename]
+        except KeyError:
+            log.error("%s server req not found %s %s %s %s %s", self, servicename, reqid, method, args, kw)
+            return 
+        try:
+            ret = getattr(service, method)(*args, **kw)
+            if on_resp: on_resp(1, ret)
+        except Exception, err:
+            if on_resp: on_resp(0, repr(err))
+
 class Client(object):
+
+    inst = weakref.WeakValueDictionary()
 
     def __init__(self, host, port):
         self.name = "rpcc(%s:%d)" % (host, port)
@@ -114,6 +139,14 @@ class Client(object):
         self.maxreqid = 0xffffffff
 
         self.requests = {}
+
+        self.inst[host, port] = self
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
     def req(self, service, method, args=(), kw=None, on_resp=None):
         if kw is None: kw = {}
@@ -149,7 +182,6 @@ class Client(object):
             if n >= end:
                 json = data[LENGTH:end]
                 resps.append(loads(json))
-                print "!!!!!", resps[-1]
                 data = data[end:]
             else:
                 break
@@ -165,6 +197,57 @@ class Client(object):
     
     def on_client_close(sock):
         pass
+
+class LocalProxy(object):
+
+    def __init__(self, service):
+        self._service = service
+
+    def __getattr__(self, attr):
+        def _func(args=(), kw=None, on_resp=None):
+            if kw is None: kw = {}
+            try:
+                ret = getattr(self._service, attr)(*args, **kw)
+                on_resp(1, ret)
+            except Exception, err:
+                on_resp(0, ret)
+        self.__dict__[attr] = _func
+        return _func
+
+class RemoteProxy(object):
+
+    def __init__(self, client, servicename):
+        self._client = client
+        self._name = servicename
+
+    def __getattr__(self, attr):
+        def _func(args=(), kw=None, on_resp=None):
+            if kw is None: kw = {}
+            return self._client.req(self._name, attr, args, kw, on_resp)
+        self.__dict__[attr] = _func
+        return _func
+
+def get_service_of_client(host, port, servicename):
+    client = get_client(host, port)
+    if isinstance(client, Server):
+        return LocalProxy(client.get_service(servicename))
+    return RemoteProxy(client, servicename)
+
+def get_client(host, port):
+    try:
+        return Server.inst[host, port]
+    except KeyError:
+        pass
+    try:
+        return Client.inst[host, port]
+    except KeyError:
+        return Client(host, port)
+
+def get_server(host, port):
+    try:
+        return Server.inst[host, port]
+    except KeyError:
+        return Server(host, port)
 
 if __name__ == "__main__":
 
