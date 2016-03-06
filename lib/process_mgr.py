@@ -8,9 +8,9 @@ class ProcessManager(object):
         self.processes = {}
 
     def start_process(self, cmd, **kw):
-        log.info("start process %s", cmd)
         popen = subprocess.Popen(cmd.split(" "), **kw)
         pid = popen.pid
+        log.info("start process %d %s ", pid, cmd)
         self.processes[pid] = popen
         return pid
 
@@ -22,6 +22,13 @@ class ProcessManager(object):
         popen = self.processes[pid]
         popen.kill()
         return 1
+
+    def poll(self):
+        for pid, popen in self.processes.items():
+            retstatus = self.processes[pid].poll()
+            if retstatus is not None:
+                log.info("process mgr poll process %d terminated %d", pid, retstatus)
+                del self.processes[pid]
 
 if __name__ == "__main__":
 
@@ -39,7 +46,11 @@ if __name__ == "__main__":
     mgr.kill_process(pid)
 
     pid = mgr.start_process("sleep 5")
+    mgr.poll()
     import time
     time.sleep(3)
     mgr.kill_process(pid)
+
+    time.sleep(3)
+    mgr.poll()
 
