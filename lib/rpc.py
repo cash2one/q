@@ -91,8 +91,30 @@ class Server(object):
                 break
         if data:
             sock.read_buff.append(data)
+        self._handle_request(sock, resps)
 
-        for reqid, servicename, method, args, kw, need_result in resps:
+    def _on_server_data2(self, sock):
+        data = "".join(sock.read_buff)
+        sock.read_buff = []
+        resps = []
+        while True:
+            n = len(data)
+            if n <= LENGTH:
+                break
+            length,  = unpack(">H", data[:LENGTH])
+            end = length + LENGTH
+            if n >= end:
+                json = data[LENGTH:end]
+                resps.append(loads(json))
+                data = data[end:]
+            else:
+                break
+        if data:
+            sock.read_buff.append(data)
+        self._handle_request(sock, resps)
+
+    def _handle_request(self, sock, reqs):
+        for reqid, servicename, method, args, kw, need_result in reqs:
             try:
                 service = self.services[servicename]
             except KeyError:
