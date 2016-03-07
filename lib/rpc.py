@@ -254,6 +254,9 @@ if __name__ == "__main__":
     import sys; print sys.argv
     iss = "c" not in sys.argv
     isc = "s" not in sys.argv
+
+    if iss: 
+        import profile; profile.install()
     
     host, port = "127.0.0.1", 10471
 
