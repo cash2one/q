@@ -306,13 +306,16 @@ if __name__ == "__main__":
     
     if isc:
         nl = [0]
+
+        import time
+        begin = time.time()
         def on_resp(reqid, resp):
             # print resp
             nl[0] += 1
             if resp != nl[0]:
                 print "err", resp, nl
             if nl[0] % 10000 == 0:
-                import time; print time.time(), nl, resp
+                print time.time(), nl, resp, resp / (time.time() - begin)
             # print "on_resp", reqid, resp
 
         rc = Client(host, port)
