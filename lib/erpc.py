@@ -25,7 +25,7 @@ TODO
 from json import loads, dumps
 from struct import pack, unpack
 
-import tcp
+import etcp as tcp
 import log
 import weakref
 
