@@ -38,6 +38,7 @@ def listen(host, port, on_data=None, on_close=None, backlog=1024):
     log.info("begin tcp listen %s %s %s", host, port, backlog)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(0)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((host, port))
     sock.listen(backlog)
     return _add_sock(sock, accept=True, on_data=on_data, on_close=on_close)
@@ -75,6 +76,7 @@ def poll():
                 while True:
                     try:
                         data = sock.sock.recv(0xffff)
+                        print "recv", repr(data)
                         if data:
                             sock.read_buff.append(data)
                             sock.on_data(sock)
@@ -104,6 +106,7 @@ def poll():
             while buff:
                 try:
                     n = sock.sock.send(buff)
+                    print "send", repr(buff[:n])
                     if n < len(buff):
                         if n == 0: 
                             break
