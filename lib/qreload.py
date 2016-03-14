@@ -54,11 +54,14 @@ def code_equal(one, another):
             continue 
         if attr in code_equal_ignore_atts:
             continue
-        print attr, getattr(one, attr), getattr(another, attr) , getattr(one, attr) == getattr(another, attr)
+        if attr == "co_code":
+            print attr, repr(getattr(one, attr)), repr(getattr(another, attr)) , getattr(one, attr) == getattr(another, attr)
+        else:
+            print attr, getattr(one, attr), getattr(another, attr) , getattr(one, attr) == getattr(another, attr)
         eq = eq and getattr(one, attr) == getattr(another, attr)
-    print 
-    print 
     print eq
+    print 
+    print
     return eq
 
 def f1():
@@ -80,6 +83,10 @@ def f5():
     for x in range(10):
         print 2
 
+def f51():
+    for y in range(10):
+        print 2
+
 def f6():
     for x in range(10):
         print 3
@@ -98,3 +105,49 @@ eq(f2, f22)
 eq(f1, f7)
 eq(f2, f3)
 eq(f3, f4)
+eq(f5, f51)
+
+
+gd = {}
+ld = {}
+code = """
+a = 1
+"""
+exec code in gd, ld
+print "gd", gd
+print "ld", ld
+
+
+def sub(key, cb):
+    pass
+
+def f():
+    print 1
+
+sub("xxx", f)
+
+def f():
+    print 2
+
+#reload
+
+#pub() print 2
+
+
+def f():
+    def h():
+        print 1
+    return h
+
+a = f()
+a = f()
+
+#reload
+
+def f():
+    def h():
+        print 2
+    return h
+
+b = f()
+

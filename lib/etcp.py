@@ -38,13 +38,37 @@ def listen(host, port, on_data=None, on_close=None, backlog=1024):
     log.info("begin tcp listen %s %s %s", host, port, backlog)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(0)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((host, port))
+
+    k = 1024
+    m = 1024 * k * 10
+    print "*** 1", sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, m)
+    print "*** 2", sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+
+    print "*** 11", sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, m)
+    print "*** 21", sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+
     sock.listen(backlog)
     return _add_sock(sock, accept=True, on_data=on_data, on_close=on_close)
 
 def connect(host, port, on_data, on_close):
     log.info("begin tcp connection to %s %s", host, port)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    k = 1024
+    m = 1024 * k * 10
+    print "*** 1", sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, m)
+    print "*** 2", sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+
+    print "*** 11", sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, m)
+    print "*** 21", sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+
+
     sock.setblocking(0)
     sock.connect_ex((host, port))
     return _add_sock(sock, readable=True, writable=True, connecting=True, on_data=on_data, on_close=on_close)
@@ -92,6 +116,8 @@ def poll():
                 connection, addr = sock.sock.accept()
                 connection.setblocking(0)
                 _s = _add_sock(connection, readable=True, writable=True, on_data=sock.on_data)
+                print "*** 3", connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+                print "*** 4", connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
                 log.info("new tcp connection %s", _s)
 
         elif event & select.EPOLLOUT:
