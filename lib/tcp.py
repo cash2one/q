@@ -6,22 +6,26 @@
 
 接口
 
-    sock = tcp.listen(host, port, on_data=None, on_close=None, backlog=1024)
+    def on_connection(sock):
+        pass
+
+    def on_close(sock):
+        pass
+
+    def on_data(sock):
+        print sock, sock.recv_buff
+
+    ---
+
+    sock = tcp.listen(host, port, on_connection, on_data=None, on_close=None, backlog=1024)
     sock.close()
+
 
     ---
 
     sock = tcp.connect(host, port, on_data, on_close, on_connected)
     sock.send(buff)
     sock.close()
-
-    ---
-
-    def on_data(sock):
-        print sock, sock.recv_buff
-
-    def on_close(sock):
-        print sock, sock.recv_buff
 
 实现笔记
     TCP 连接需要监听写事件的条件: 异步连接中 或 有数据需要发送

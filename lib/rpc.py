@@ -106,7 +106,7 @@ class Server(object):
                 break
             length,  = unpack(">H", data[begin:begin+LENGTH])
             end = begin + length + LENGTH
-            if end <= n:
+            if end <= dend:
                 json = data[begin+LENGTH:end]
                 resps.append(loads(json))
                 begin = end
